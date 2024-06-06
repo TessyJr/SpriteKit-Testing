@@ -1,11 +1,3 @@
-//
-//  AppDelegate.swift
-//  SpriteKit-Testing
-//
-//  Created by Christopher Nathanael Tessy on 04/06/24.
-//
-
-
 import Cocoa
 
 @main

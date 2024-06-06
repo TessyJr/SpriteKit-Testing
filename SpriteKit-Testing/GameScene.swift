@@ -2,37 +2,34 @@ import SpriteKit
 import GameplayKit
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
-    var label: SKLabelNode = SKLabelNode()
     var sceneCamera: SKCameraNode = SKCameraNode()
     
-    var inputs: String = ""
-    let moveAmount: CGFloat = 16.0
-    
-    var player: SKSpriteNode = SKSpriteNode()
     var floorCoordinates = [CGPoint]()
     var trapdoorNode: SKSpriteNode?
     
+    var player: Player = Player()
+    
+    var labelSpell: SKLabelNode = SKLabelNode()
+    var labelHealth: SKLabelNode = SKLabelNode()
+    
     override func didMove(to view: SKView) {
-        self.sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
-        self.physicsWorld.contactDelegate = self
+        physicsWorld.contactDelegate = self
+        
+        sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
         
         for node in self.children {
             if let someTileMap: SKTileMapNode = node as? SKTileMapNode {
                 giveTileMapPhysicsBody(map: someTileMap)
-                someTileMap.removeFromParent()
             }
         }
         
-        if (self.childNode(withName: "player") != nil) {
-            player = self.childNode(withName: "player") as! SKSpriteNode
-            player.physicsBody?.categoryBitMask = bitMask.player.rawValue
-            player.physicsBody?.contactTestBitMask = bitMask.floor.rawValue | bitMask.trapdoor.rawValue
-            player.physicsBody?.collisionBitMask = bitMask.wall.rawValue
-            player.physicsBody?.allowsRotation = false
-            player.physicsBody?.affectedByGravity = false
-        }
+        player.spriteNode = childNode(withName: "player") as! SKSpriteNode
+        player.setupSpriteNode()
         
-        self.label = self.player.childNode(withName: "label") as! SKLabelNode
+        labelSpell = player.spriteNode.childNode(withName: "labelSpell") as! SKLabelNode
+        
+        labelHealth = player.spriteNode.childNode(withName: "labelHealth") as! SKLabelNode
+        labelHealth.text = "\(player.currentHealth)"
         
         // Generate a random trapdoor in the floor coordinates by changing the texture into "trapdoor"
         changeRandomFloorTileToTrapdoor()
@@ -58,24 +55,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     tileNode.size = CGSize(width: 16, height: 16)
                     tileNode.physicsBody = SKPhysicsBody(texture: tileTextures, size: CGSize(width: 16, height: 16))
                     
-                    if tileMap.name == "wall" {
-                        tileNode.physicsBody?.categoryBitMask = bitMask.wall.rawValue
-                        tileNode.physicsBody?.contactTestBitMask = 0
-                        tileNode.physicsBody?.collisionBitMask = bitMask.player.rawValue
-                    } else if tileMap.name == "floor" {
-                        tileNode.physicsBody?.categoryBitMask = bitMask.floor.rawValue
-                        tileNode.physicsBody?.collisionBitMask = 0
-                        
-                        let newPoint = CGPoint(x: x, y: y)
-                        let newPointConverted = self.convert(newPoint, from: tileMap)
-                        
-                        floorCoordinates.append(newPointConverted)
+                    if let isSolid = tileDefinition.userData?["isSolid"] as? Bool {
+                        if isSolid {
+                            tileNode.physicsBody?.categoryBitMask = bitMask.wall.rawValue
+                            tileNode.physicsBody?.contactTestBitMask = 0
+                            tileNode.physicsBody?.collisionBitMask = bitMask.player.rawValue
+                        } else {
+                            tileNode.physicsBody?.categoryBitMask = bitMask.floor.rawValue
+                            tileNode.physicsBody?.collisionBitMask = 0
+                            
+                            let newPoint = CGPoint(x: x, y: y)
+                            let newPointConverted = self.convert(newPoint, from: tileMap)
+                            
+                            floorCoordinates.append(newPointConverted)
+                        }
                     }
                     
                     tileNode.physicsBody?.affectedByGravity = false
                     tileNode.physicsBody?.isDynamic = false
                     tileNode.physicsBody?.friction = 1
-                    tileNode.zPosition = 1
+                    tileNode.zPosition = 0
                     
                     tileNode.position = CGPoint(x: tileNode.position.x + startLocation.x, y: tileNode.position.y + startLocation.y)
                     self.addChild(tileNode)
@@ -97,7 +96,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             trapdoorNode.physicsBody?.affectedByGravity = false
             trapdoorNode.physicsBody?.isDynamic = false
             trapdoorNode.physicsBody?.friction = 1
-            trapdoorNode.zPosition = 1
+            trapdoorNode.zPosition = 0
             
             self.addChild(trapdoorNode)
             self.trapdoorNode = trapdoorNode
@@ -110,6 +109,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         if (firstBody.categoryBitMask == bitMask.player.rawValue && secondBody.categoryBitMask == bitMask.trapdoor.rawValue) || (secondBody.categoryBitMask == bitMask.player.rawValue && firstBody.categoryBitMask == bitMask.trapdoor.rawValue) {
             print("Player is on the trapdoor!")
+            player.currentHealth -= 10
         }
     }
     
@@ -117,42 +117,42 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         switch event.keyCode {
         case 123:
             // Move character left
-            player.texture = SKTexture(imageNamed: "character-left")
-            let moveLeftAction = SKAction.moveBy(x: -moveAmount, y: 0, duration: 0.2)
-            player.run(moveLeftAction)
+            player.spriteNode.texture = SKTexture(imageNamed: "character-left")
+            let moveLeftAction = SKAction.moveBy(x: -player.moveAmount, y: 0, duration: 0.2)
+            player.spriteNode.run(moveLeftAction)
             
         case 124:
             // Move character right
-            player.texture = SKTexture(imageNamed: "character-right")
-            let moveRightAction = SKAction.moveBy(x: moveAmount, y: 0, duration: 0.2)
-            player.run(moveRightAction)
+            player.spriteNode.texture = SKTexture(imageNamed: "character-right")
+            let moveRightAction = SKAction.moveBy(x: player.moveAmount, y: 0, duration: 0.2)
+            player.spriteNode.run(moveRightAction)
             
         case 126:
             // Move character up
-            player.texture = SKTexture(imageNamed: "character-up")
-            let moveUpAction = SKAction.moveBy(x: 0, y: moveAmount, duration: 0.2)
-            player.run(moveUpAction)
+            player.spriteNode.texture = SKTexture(imageNamed: "character-up")
+            let moveUpAction = SKAction.moveBy(x: 0, y: player.moveAmount, duration: 0.2)
+            player.spriteNode.run(moveUpAction)
             
         case 125:
             // Move character down
-            player.texture = SKTexture(imageNamed: "character-down")
-            let moveDownAction = SKAction.moveBy(x: 0, y: -moveAmount, duration: 0.2)
-            player.run(moveDownAction)
+            player.spriteNode.texture = SKTexture(imageNamed: "character-down")
+            let moveDownAction = SKAction.moveBy(x: 0, y: -player.moveAmount, duration: 0.2)
+            player.spriteNode.run(moveDownAction)
             
         case 36:
             // Print label on ENTER
-            print(label.text ?? "")
-            inputs = ""
-            label.text = inputs
+            player.inputSpell = ""
+            labelSpell.text = player.inputSpell
             
         default:
-            inputs.append(event.characters!)
-            label.text = inputs
+            player.inputSpell.append(event.characters!)
+            labelSpell.text = player.inputSpell
             break
         }
     }
     
     override func update(_ currentTime: TimeInterval) {
-        sceneCamera.position = player.position
+        sceneCamera.position = player.spriteNode.position
+        labelHealth.text = "\(player.currentHealth)"
     }
 }
