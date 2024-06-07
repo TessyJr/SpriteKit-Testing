@@ -7,7 +7,7 @@ enum Direction {
 class Player {
     var spriteNode: SKSpriteNode = SKSpriteNode()
     
-    var moveAmount: CGFloat = 4.0
+    var moveAmount: CGFloat = 16.0
     
     var currentHealth: Int = 100
     var maxHealth: Int = 100
@@ -18,8 +18,6 @@ class Player {
         spriteNode.physicsBody?.categoryBitMask = bitMask.player.rawValue
         spriteNode.physicsBody?.contactTestBitMask = bitMask.floor.rawValue | bitMask.trapdoor.rawValue
         spriteNode.physicsBody?.collisionBitMask = bitMask.wall.rawValue
-        spriteNode.physicsBody?.allowsRotation = false
-        spriteNode.physicsBody?.affectedByGravity = false
     }
     
     func move(direction: Direction) {

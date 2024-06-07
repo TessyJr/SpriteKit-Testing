@@ -23,8 +23,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
-        player.spriteNode = childNode(withName: "player") as! SKSpriteNode
+        player.spriteNode = childNode(withName: "background")!.childNode(withName: "player") as! SKSpriteNode
         player.setupSpriteNode()
+        player.spriteNode.position = floorCoordinates.randomElement()!
         
         labelSpell = player.spriteNode.childNode(withName: "labelSpell") as! SKLabelNode
         
@@ -81,6 +82,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         }
+        
+        print(floorCoordinates)
     }
     
     func changeRandomFloorTileToTrapdoor() {
@@ -100,6 +103,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             self.addChild(trapdoorNode)
             self.trapdoorNode = trapdoorNode
+            
+            print(trapdoorNode.position)
         }
     }
     
@@ -158,6 +163,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             labelSpell.text = player.inputSpell
             break
         }
+        
+        print(player.spriteNode.position)
     }
     
     override func update(_ currentTime: TimeInterval) {
