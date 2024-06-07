@@ -81,6 +81,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         }
+        
+        print(floorCoordinates)
     }
     
     func changeRandomFloorTileToTrapdoor() {
@@ -100,6 +102,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             self.addChild(trapdoorNode)
             self.trapdoorNode = trapdoorNode
+            
+            print(trapdoorNode.position)
         }
     }
     
@@ -117,27 +121,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         switch event.keyCode {
         case 123:
             // Move character left
-            player.spriteNode.texture = SKTexture(imageNamed: "character-left")
-            let moveLeftAction = SKAction.moveBy(x: -player.moveAmount, y: 0, duration: 0.2)
-            player.spriteNode.run(moveLeftAction)
+            player.move(direction: .left)
             
         case 124:
             // Move character right
-            player.spriteNode.texture = SKTexture(imageNamed: "character-right")
-            let moveRightAction = SKAction.moveBy(x: player.moveAmount, y: 0, duration: 0.2)
-            player.spriteNode.run(moveRightAction)
+            player.move(direction: .right)
             
         case 126:
             // Move character up
-            player.spriteNode.texture = SKTexture(imageNamed: "character-up")
-            let moveUpAction = SKAction.moveBy(x: 0, y: player.moveAmount, duration: 0.2)
-            player.spriteNode.run(moveUpAction)
+            player.move(direction: .up)
             
         case 125:
             // Move character down
-            player.spriteNode.texture = SKTexture(imageNamed: "character-down")
-            let moveDownAction = SKAction.moveBy(x: 0, y: -player.moveAmount, duration: 0.2)
-            player.spriteNode.run(moveDownAction)
+            player.move(direction: .down)
             
         case 36:
             // Print label on ENTER

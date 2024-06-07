@@ -6,3 +6,4 @@ enum bitMask: UInt32 {
     case wall = 0x4
     case trapdoor = 0x8
 }
+
