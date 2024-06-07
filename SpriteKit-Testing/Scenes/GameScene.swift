@@ -5,6 +5,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var sceneCamera: SKCameraNode = SKCameraNode()
     
     var floorCoordinates = [CGPoint]()
+    var wallCoordinates = [CGPoint]()
     var trapdoorNode: SKSpriteNode?
     
     var player: Player = Player()
@@ -23,8 +24,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
         
-        player.spriteNode = childNode(withName: "background")!.childNode(withName: "player") as! SKSpriteNode
-        player.setupSpriteNode()
+        player.spriteNode = childNode(withName: "player") as! SKSpriteNode
         player.spriteNode.position = floorCoordinates.randomElement()!
         
         labelSpell = player.spriteNode.childNode(withName: "labelSpell") as! SKLabelNode
@@ -38,7 +38,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func giveTileMapPhysicsBody(map: SKTileMapNode) {
         let tileMap = map
-        let startLocation: CGPoint = tileMap.position
         let tileSize = tileMap.tileSize
         let halfWidth = CGFloat(tileMap.numberOfColumns) / 2.0 * tileSize.width
         let halfHeight = CGFloat(tileMap.numberOfRows) / 2.0 * tileSize.height
@@ -46,44 +45,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for col in 0..<tileMap.numberOfColumns {
             for row in 0..<tileMap.numberOfRows {
                 if let tileDefinition = tileMap.tileDefinition(atColumn: col, row: row) {
-                    let tileArray = tileDefinition.textures
-                    let tileTextures = tileArray[0]
                     let x = CGFloat(col) * tileSize.width - halfWidth + (tileSize.width / 2)
                     let y = CGFloat(row) * tileSize.height - halfHeight + (tileSize.height / 2)
                     
-                    let tileNode = SKSpriteNode(texture: tileTextures)
-                    tileNode.position = CGPoint(x: x, y: y)
-                    tileNode.size = CGSize(width: 16, height: 16)
-                    tileNode.physicsBody = SKPhysicsBody(texture: tileTextures, size: CGSize(width: 16, height: 16))
+                    let tileCoordinate = CGPoint(x: x, y: y)
                     
                     if let isSolid = tileDefinition.userData?["isSolid"] as? Bool {
                         if isSolid {
-                            tileNode.physicsBody?.categoryBitMask = bitMask.wall.rawValue
-                            tileNode.physicsBody?.contactTestBitMask = 0
-                            tileNode.physicsBody?.collisionBitMask = bitMask.player.rawValue
+                            wallCoordinates.append(tileCoordinate)
                         } else {
-                            tileNode.physicsBody?.categoryBitMask = bitMask.floor.rawValue
-                            tileNode.physicsBody?.collisionBitMask = 0
-                            
-                            let newPoint = CGPoint(x: x, y: y)
-                            let newPointConverted = self.convert(newPoint, from: tileMap)
-                            
-                            floorCoordinates.append(newPointConverted)
+                            floorCoordinates.append(tileCoordinate)
                         }
                     }
-                    
-                    tileNode.physicsBody?.affectedByGravity = false
-                    tileNode.physicsBody?.isDynamic = false
-                    tileNode.physicsBody?.friction = 1
-                    tileNode.zPosition = 0
-                    
-                    tileNode.position = CGPoint(x: tileNode.position.x + startLocation.x, y: tileNode.position.y + startLocation.y)
-                    self.addChild(tileNode)
                 }
             }
         }
-        
-        print(floorCoordinates)
+        print("wall coordinates:")
+        print(wallCoordinates)
     }
     
     func changeRandomFloorTileToTrapdoor() {
@@ -92,19 +70,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let trapdoorNode = SKSpriteNode(texture: trapdoorTexture)
             trapdoorNode.position = randomFloorCoordinate
             trapdoorNode.size = CGSize(width: 16, height: 16)
-            trapdoorNode.physicsBody = SKPhysicsBody(texture: trapdoorTexture, size: trapdoorNode.size)
-            trapdoorNode.physicsBody?.categoryBitMask = bitMask.trapdoor.rawValue
-            trapdoorNode.physicsBody?.collisionBitMask = 0
-            trapdoorNode.physicsBody?.contactTestBitMask = bitMask.player.rawValue
-            trapdoorNode.physicsBody?.affectedByGravity = false
-            trapdoorNode.physicsBody?.isDynamic = false
-            trapdoorNode.physicsBody?.friction = 1
-            trapdoorNode.zPosition = 0
             
             self.addChild(trapdoorNode)
             self.trapdoorNode = trapdoorNode
-            
-            print(trapdoorNode.position)
         }
     }
     
@@ -139,18 +107,46 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         switch event.keyCode {
         case 123:
             // Move character left
+            let moveToCoordinate = CGPoint(x: round(player.spriteNode.position.x - 16.0), y: round(player.spriteNode.position.y))
+            let moveToCoordinateIsWall = wallCoordinates.contains { $0 == moveToCoordinate }
+            
+            if moveToCoordinateIsWall {
+                break
+            }
+            
             player.move(direction: .left)
             
         case 124:
             // Move character right
+            let moveToCoordinate = CGPoint(x: round(player.spriteNode.position.x + 16.0), y: round(player.spriteNode.position.y))            
+            let moveToCoordinateIsWall = wallCoordinates.contains { $0 == moveToCoordinate }
+            
+            if moveToCoordinateIsWall {
+                break
+            }
+            
             player.move(direction: .right)
             
         case 126:
             // Move character up
+            let moveToCoordinate = CGPoint(x: round(player.spriteNode.position.x), y: round(player.spriteNode.position.y + 16))
+            let moveToCoordinateIsWall = wallCoordinates.contains { $0 == moveToCoordinate }
+            
+            if moveToCoordinateIsWall {
+                break
+            }
+            
             player.move(direction: .up)
             
         case 125:
             // Move character down
+            let moveToCoordinate = CGPoint(x: round(player.spriteNode.position.x), y: round(player.spriteNode.position.y - 16))
+            let moveToCoordinateIsWall = wallCoordinates.contains { $0 == moveToCoordinate }
+            
+            if moveToCoordinateIsWall {
+                break
+            }
+            
             player.move(direction: .down)
             
         case 36:
@@ -163,8 +159,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             labelSpell.text = player.inputSpell
             break
         }
-        
-        print(player.spriteNode.position)
     }
     
     override func update(_ currentTime: TimeInterval) {

@@ -24,8 +24,7 @@ class GameScene2: SKScene, SKPhysicsContactDelegate {
         }
         
         player.spriteNode = childNode(withName: "player") as! SKSpriteNode
-        player.setupSpriteNode()
-        
+ 
         labelSpell = player.spriteNode.childNode(withName: "labelSpell") as! SKLabelNode
         
         labelHealth = player.spriteNode.childNode(withName: "labelHealth") as! SKLabelNode
