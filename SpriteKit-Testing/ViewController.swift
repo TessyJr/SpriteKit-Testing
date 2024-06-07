@@ -10,6 +10,7 @@ class ViewController: NSViewController {
         super.viewDidLoad()
         
         let window = NSApplication.shared.windows.first
+        window?.toggleFullScreen(nil)
         
         // Load 'GameScene.sks' as a GKScene. This provides gameplay related content
         // including entities and graphs.
@@ -31,8 +32,6 @@ class ViewController: NSViewController {
                 }
             }
         }
-        
-        window?.toggleFullScreen(nil)
     }
 }
 

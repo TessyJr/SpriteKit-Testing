@@ -1,6 +1,5 @@
 import SpriteKit
 
-
 enum Direction {
     case left, right, up, down
 }
@@ -8,7 +7,7 @@ enum Direction {
 class Player {
     var spriteNode: SKSpriteNode = SKSpriteNode()
     
-    var moveAmount: CGFloat = 16.0
+    var moveAmount: CGFloat = 4.0
     
     var currentHealth: Int = 100
     var maxHealth: Int = 100
@@ -45,7 +44,7 @@ class Player {
             moveAction = SKAction.moveBy(x: 0, y: -moveAmount, duration: 0.1)
         }
         
-        spriteNode.texture = texture
+        //        spriteNode.texture = texture
         spriteNode.run(moveAction)
     }
 }

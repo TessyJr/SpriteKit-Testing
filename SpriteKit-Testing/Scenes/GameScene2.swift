@@ -1,7 +1,7 @@
 import SpriteKit
 import GameplayKit
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
+class GameScene2: SKScene, SKPhysicsContactDelegate {
     var sceneCamera: SKCameraNode = SKCameraNode()
     
     var floorCoordinates = [CGPoint]()
@@ -15,7 +15,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func didMove(to view: SKView) {
         physicsWorld.contactDelegate = self
         
-        sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
+        sceneCamera = self.childNode(withName: "sceneCamera") as! SKCameraNode
         
         for node in self.children {
             if let someTileMap: SKTileMapNode = node as? SKTileMapNode {
@@ -81,8 +81,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         }
-        
-        print(floorCoordinates)
     }
     
     func changeRandomFloorTileToTrapdoor() {
@@ -102,8 +100,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             self.addChild(trapdoorNode)
             self.trapdoorNode = trapdoorNode
-            
-            print(trapdoorNode.position)
         }
     }
     
@@ -114,6 +110,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if (firstBody.categoryBitMask == bitMask.player.rawValue && secondBody.categoryBitMask == bitMask.trapdoor.rawValue) || (secondBody.categoryBitMask == bitMask.player.rawValue && firstBody.categoryBitMask == bitMask.trapdoor.rawValue) {
             print("Player is on the trapdoor!")
             player.currentHealth -= 10
+            
+            if let scene = GKScene(fileNamed: "GameScene") {
+                if let sceneNode = scene.rootNode as! GameScene? {
+                    sceneNode.scaleMode = .aspectFit
+                    sceneNode.player = self.player
+                    
+                    if let view = self.view {
+                        let transition = SKTransition.fade(withDuration: 1.0)
+                        view.presentScene(sceneNode, transition: transition)
+                        view.showsFPS = true
+                        view.showsNodeCount = true
+                    }
+                }
+            }
         }
     }
     
