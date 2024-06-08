@@ -8,55 +8,120 @@ class Player {
     var spriteNode: SKSpriteNode = SKSpriteNode()
     
     var isMoving: Bool = false
+    var isInvincible: Bool = false
     
     let moveAmount: CGFloat = 16.0
-    let moveSpeed: CGFloat = 0.2
+    var moveSpeed: CGFloat = 0.1
     
-    var currentHealth: Int = 100
-    var maxHealth: Int = 100
+    var currentHealth: Int = 50
+    var maxHealth: Int = 50
     
     var inputSpell: String = ""
     
-    func move(direction: Direction) {
-        if isMoving {
-            return
+    func castSpell(spell: String, enemy: Enemy) {
+        switch spell {
+        case "fireball":
+            enemy.currentHealth -= 10
+            
+        case "avada kedavra":
+            enemy.currentHealth -= enemy.currentHealth
+            
+        default:
+            break;
         }
         
-        isMoving = true
+        if enemy.currentHealth == 0 {
+            
+        }
+    }
+    
+    func getDamage() {
+        if !isInvincible {
+            currentHealth -= 10
+            isInvincible = true
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                self.isInvincible = false
+            }
+        }
+    }
+    
+    func checkIfStandingOnDamageTile(damageFloorCoordinates: [CGPoint]) {
+        let currentCoordinates = CGPoint(x: round(spriteNode.position.x), y: round(spriteNode.position.y))
         
+        if damageFloorCoordinates.contains(currentCoordinates) {
+            self.getDamage()
+        }
+    }
+    
+    func changeDirection(direction: Direction) {
         let texture: SKTexture
-        let moveAction: SKAction
         
         switch direction {
         case .left:
             texture = SKTexture(imageNamed: "character-left")
-            moveAction = SKAction.moveBy(x: -moveAmount, y: 0, duration: moveSpeed)
             
         case .right:
             texture = SKTexture(imageNamed: "character-right")
-            moveAction = SKAction.moveBy(x: moveAmount, y: 0, duration: moveSpeed)
             
         case .up:
             texture = SKTexture(imageNamed: "character-up")
-            moveAction = SKAction.moveBy(x: 0, y: moveAmount, duration: moveSpeed)
             
         case .down:
             texture = SKTexture(imageNamed: "character-down")
+        }
+        
+        spriteNode.texture = texture
+    }
+    
+    func move(direction: Direction, wallCoordinates: [CGPoint], damageFloorCoordinates: [CGPoint], completion: @escaping () -> Void) {
+        if isMoving {
+            return
+        }
+    
+        isMoving = true
+        
+        changeDirection(direction: direction)
+        
+        let moveAction: SKAction
+        let moveToCoordinate: CGPoint
+        
+        switch direction {
+        case .left:
+            moveToCoordinate = CGPoint(x: round(spriteNode.position.x - moveAmount), y: round(spriteNode.position.y))
+            moveAction = SKAction.moveBy(x: -moveAmount, y: 0, duration: moveSpeed)
+            
+        case .right:
+            moveToCoordinate = CGPoint(x: round(spriteNode.position.x + moveAmount), y: round(spriteNode.position.y))
+            moveAction = SKAction.moveBy(x: moveAmount, y: 0, duration: moveSpeed)
+            
+        case .up:
+            moveToCoordinate = CGPoint(x: round(spriteNode.position.x), y: round(spriteNode.position.y + moveAmount))
+            moveAction = SKAction.moveBy(x: 0, y: moveAmount, duration: moveSpeed)
+            
+        case .down:
+            moveToCoordinate = CGPoint(x: round(spriteNode.position.x), y: round(spriteNode.position.y - moveAmount))
             moveAction = SKAction.moveBy(x: 0, y: -moveAmount, duration: moveSpeed)
+        }
+        
+        // If move to coordinate is a wall DONT move
+        if wallCoordinates.contains(moveToCoordinate) {
+            self.isMoving = false
+            return
         }
         
         // Define the completion action to round the position
         let roundPositionAction = SKAction.run {
-            self.spriteNode.position.x = round(self.spriteNode.position.x)
-            self.spriteNode.position.y = round(self.spriteNode.position.y)
+            self.spriteNode.position = moveToCoordinate
             
-            print("Current coordinates: \(self.spriteNode.position)")
+            self.checkIfStandingOnDamageTile(damageFloorCoordinates: damageFloorCoordinates)
             
             self.isMoving = false
+            
+            completion()
         }
         
         // Create a sequence of the move action followed by the round position action
-        spriteNode.texture = texture
         let sequence = SKAction.sequence([moveAction, roundPositionAction])
         
         // Run the sequence on the sprite node

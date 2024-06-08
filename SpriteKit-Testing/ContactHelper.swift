@@ -1,9 +1,12 @@
 import SpriteKit
 
-enum bitMask: UInt32 {
-    case player = 1
-    case floor = 2
-    case wall = 4
-    case trapdoor = 8
-}
-
+//protocol CustomScene {
+//    var floorCoordinates: [CGPoint] { get set }
+//    
+//    var wallCoordinates: [CGPoint] { get set }
+//    
+//    var damageFloorCoordinates: [CGPoint] { get set }
+//    var damageFloorNodes: [SKSpriteNode] { get set }
+//    
+//    var player: Player { get set }
+//}

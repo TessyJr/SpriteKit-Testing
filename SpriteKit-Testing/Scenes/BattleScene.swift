@@ -1,7 +1,7 @@
 import SpriteKit
 import GameplayKit
 
-class GameScene: SKScene {
+class BattleScene: SKScene {
     var sceneCamera: SKCameraNode = SKCameraNode()
     
     var floorCoordinates = [CGPoint]()
@@ -11,11 +11,12 @@ class GameScene: SKScene {
     var damageFloorCoordinates = [CGPoint]()
     var damageFloorNodes = [SKSpriteNode]()
     
-    var trapdoorNode: SKSpriteNode?
-    
     var player: Player = Player()
     var labelSpell: SKLabelNode = SKLabelNode()
-    var labelHealth: SKLabelNode = SKLabelNode()
+    var labelPlayerHealth: SKLabelNode = SKLabelNode()
+    
+    var enemy: Enemy = Enemy()
+    var labelEnemyHealth: SKLabelNode = SKLabelNode()
     
     override func didMove(to view: SKView) {
         sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
@@ -28,14 +29,15 @@ class GameScene: SKScene {
         
         player.spriteNode = childNode(withName: "player") as! SKSpriteNode
         player.spriteNode.position = floorCoordinates.randomElement()!
-        
         labelSpell = player.spriteNode.childNode(withName: "labelSpell") as! SKLabelNode
+        labelPlayerHealth = player.spriteNode.childNode(withName: "labelPlayerHealth") as! SKLabelNode
+        labelPlayerHealth.text = "\(player.currentHealth)"
         
-        labelHealth = player.spriteNode.childNode(withName: "labelHealth") as! SKLabelNode
-        labelHealth.text = "\(player.currentHealth)"
+        enemy.spriteNode = childNode(withName: "enemy") as! SKSpriteNode
+        labelEnemyHealth = enemy.spriteNode.childNode(withName: "labelEnemyHealth") as! SKLabelNode
+        labelEnemyHealth.text = "\(enemy.currentHealth)"
         
-        // Generate a random trapdoor in the floor coordinates by changing the texture into "trapdoor"
-        changeRandomFloorTileToTrapdoor()
+        enemy.startAttacking(scene: self, player: self.player)
     }
     
     func giveTileMapPhysicsBody(map: SKTileMapNode) {
@@ -64,51 +66,23 @@ class GameScene: SKScene {
         }
     }
     
-    func changeRandomFloorTileToTrapdoor() {
-        if let randomFloorCoordinate = floorCoordinates.randomElement() {
-            let trapdoorTexture = SKTexture(imageNamed: "trapdoor")
-            let trapdoorNode = SKSpriteNode(texture: trapdoorTexture)
-            trapdoorNode.position = randomFloorCoordinate
-            trapdoorNode.size = CGSize(width: 16, height: 16)
-            
-            self.addChild(trapdoorNode)
-            self.trapdoorNode = trapdoorNode
-        }
-    }
-    
-    func goToBattleScene() {
-        if player.spriteNode.position == trapdoorNode?.position {
-            if let scene = GKScene(fileNamed: "BattleScene") {
-                if let sceneNode = scene.rootNode as! BattleScene? {
-                    sceneNode.scaleMode = .aspectFit
-                    sceneNode.player = self.player
-                    
-                    if let view = self.view {
-                        let transition = SKTransition.fade(withDuration: 1.0)
-                        view.presentScene(sceneNode, transition: transition)
-                        view.showsFPS = true
-                        view.showsNodeCount = true
-                    }
-                }
-            }
-        }
-    }
-    
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 123:
-            player.move(direction: .left, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: goToBattleScene)
+            player.move(direction: .left, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: {})
             
         case 124:
-            player.move(direction: .right, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: goToBattleScene)
+            player.move(direction: .right, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: {})
             
         case 126:
-            player.move(direction: .up, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: goToBattleScene)
+            player.move(direction: .up, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: {})
             
         case 125:
-            player.move(direction: .down, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: goToBattleScene)
+            player.move(direction: .down, wallCoordinates: wallCoordinates, damageFloorCoordinates: damageFloorCoordinates, completion: {})
             
         case 36:
+            player.castSpell(spell: player.inputSpell, enemy: enemy)
+            
             player.inputSpell = ""
             labelSpell.text = player.inputSpell
             
@@ -121,6 +95,7 @@ class GameScene: SKScene {
     
     override func update(_ currentTime: TimeInterval) {
         sceneCamera.position = player.spriteNode.position
-        labelHealth.text = "\(player.currentHealth)"
+        labelPlayerHealth.text = "\(player.currentHealth)"
+        labelEnemyHealth.text = "\(enemy.currentHealth)"
     }
 }
