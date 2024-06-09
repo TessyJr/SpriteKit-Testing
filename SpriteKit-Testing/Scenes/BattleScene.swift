@@ -8,6 +8,7 @@ class BattleScene: SKScene, BattleSceneProtocol {
     
     var wallCoordinates: [CGPoint] = [CGPoint]()
     
+    var preDamageFloorNodes = [SKSpriteNode]()
     var damageFloorCoordinates = [CGPoint]()
     var damageFloorNodes = [SKSpriteNode]()
     
@@ -89,7 +90,6 @@ class BattleScene: SKScene, BattleSceneProtocol {
             
             if enemy.currentHealth <= 0 {
                 enemy.die(scene: self)
-                print(exploreScene.player.spriteNode.position)
                 exploreScene.defeatedEnemyCoordinates.append(exploreScene.lastPlayerCoordinates!)
                 
                 if let view = self.view {

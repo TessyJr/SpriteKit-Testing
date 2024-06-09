@@ -29,7 +29,18 @@ class Enemy {
     func die(scene: BattleScene) {
         spriteNode.removeFromParent()
         scene.removeAllActions()
-        // Additional death logic, e.g., playing sound or animation
+        
+        for preDamageFloorNode in scene.preDamageFloorNodes {
+            preDamageFloorNode.removeFromParent()
+        }
+        scene.preDamageFloorNodes.removeAll()
+        
+        for damageFloorNode in scene.damageFloorNodes {
+            damageFloorNode.removeFromParent()
+        }
+        scene.damageFloorNodes.removeAll()
+        
+        scene.damageFloorCoordinates.removeAll()
     }
 }
 
@@ -41,7 +52,7 @@ class Skeleton1: Enemy {
     
     // Random Tile Attack
     private func attack1Action(scene: BattleScene, player: Player) -> SKAction {
-        var preDamageFloorNodes = [SKSpriteNode]()
+       
         var attackCoordinates = [CGPoint]()
         
         // Step 1: Get attack coordinates
@@ -65,7 +76,7 @@ class Skeleton1: Enemy {
                 trapdoorNode.alpha = 0.2
                 
                 scene.addChild(trapdoorNode)
-                preDamageFloorNodes.append(trapdoorNode)
+                scene.preDamageFloorNodes.append(trapdoorNode)
             }
         }
         
@@ -74,10 +85,10 @@ class Skeleton1: Enemy {
         
         // Step 4: Remove pre-attack nodes
         let removePreAttackAction = SKAction.run {
-            for preDamageFloorNode in preDamageFloorNodes {
+            for preDamageFloorNode in scene.preDamageFloorNodes {
                 preDamageFloorNode.removeFromParent()
             }
-            preDamageFloorNodes.removeAll()
+            scene.preDamageFloorNodes.removeAll()
         }
         
         // Step 5: Attack logic

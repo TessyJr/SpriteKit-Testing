@@ -7,6 +7,7 @@ protocol BattleSceneProtocol {
     
     var wallCoordinates: [CGPoint] { get set }
     
+    var preDamageFloorNodes: [SKSpriteNode] { get set }
     var damageFloorCoordinates: [CGPoint] { get set }
     var damageFloorNodes: [SKSpriteNode] { get set }
     
