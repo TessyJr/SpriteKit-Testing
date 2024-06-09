@@ -1,12 +1,12 @@
 import SpriteKit
 import GameplayKit
 
-class BattleScene: SKScene {
+class BattleScene: SKScene, BattleSceneProtocol {
     var sceneCamera: SKCameraNode = SKCameraNode()
     
-    var floorCoordinates = [CGPoint]()
+    var floorCoordinates: [CGPoint] = [CGPoint]()
     
-    var wallCoordinates = [CGPoint]()
+    var wallCoordinates: [CGPoint] = [CGPoint]()
     
     var damageFloorCoordinates = [CGPoint]()
     var damageFloorNodes = [SKSpriteNode]()
@@ -18,12 +18,14 @@ class BattleScene: SKScene {
     var enemy: Enemy = Enemy()
     var labelEnemyHealth: SKLabelNode = SKLabelNode()
     
+    var exploreScene: SKScene & ExplorationSceneProtocol = GameScene()
+    
     override func didMove(to view: SKView) {
         sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
         
         for node in self.children {
             if let someTileMap: SKTileMapNode = node as? SKTileMapNode {
-                giveTileMapPhysicsBody(map: someTileMap)
+                setWallsAndFloors(map: someTileMap)
             }
         }
         
@@ -40,7 +42,7 @@ class BattleScene: SKScene {
         enemy.startAttacking(scene: self, player: self.player)
     }
     
-    func giveTileMapPhysicsBody(map: SKTileMapNode) {
+    func setWallsAndFloors(map: SKTileMapNode) {
         let tileMap = map
         let tileSize = tileMap.tileSize
         let halfWidth = CGFloat(tileMap.numberOfColumns) / 2.0 * tileSize.width
@@ -82,9 +84,19 @@ class BattleScene: SKScene {
             
         case 36:
             player.castSpell(spell: player.inputSpell, enemy: enemy)
-            
             player.inputSpell = ""
             labelSpell.text = player.inputSpell
+            
+            if enemy.currentHealth <= 0 {
+                enemy.die(scene: self)
+                print(exploreScene.player.spriteNode.position)
+                exploreScene.defeatedEnemyCoordinates.append(exploreScene.lastPlayerCoordinates!)
+                
+                if let view = self.view {
+                    let transition = SKTransition.fade(withDuration: 1.0)
+                    view.presentScene(exploreScene, transition: transition)
+                }
+            }
             
         default:
             player.inputSpell.append(event.characters!)

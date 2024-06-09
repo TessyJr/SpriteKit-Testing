@@ -29,10 +29,6 @@ class Player {
         default:
             break;
         }
-        
-        if enemy.currentHealth == 0 {
-            
-        }
     }
     
     func getDamage() {
@@ -74,7 +70,7 @@ class Player {
         spriteNode.texture = texture
     }
     
-    func move(direction: Direction, wallCoordinates: [CGPoint], damageFloorCoordinates: [CGPoint], completion: @escaping () -> Void) {
+    func move(direction: Direction, wallCoordinates: [CGPoint], damageFloorCoordinates: [CGPoint] = [], completion: @escaping () -> Void) {
         if isMoving {
             return
         }
