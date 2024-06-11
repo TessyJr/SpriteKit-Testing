@@ -1,4 +1,3 @@
-import Foundation
 import SpriteKit
 
 protocol ExplorationSceneProtocol {
@@ -12,8 +11,10 @@ protocol ExplorationSceneProtocol {
     var defeatedEnemyCoordinates: [CGPoint] { get set }
     
     var player: Player { get set }
-    var labelSpell: SKLabelNode { get set }
-    var labelHealth: SKLabelNode { get set }
+    var labelPlayerSpell: SKLabelNode { get set }
+    var labelPlayerHealth: SKLabelNode { get set }
     
+    var spawnCoordinate: CGPoint { get set }
+//    var nextSceneCoordinate: CGPoint { get set }
     var lastPlayerCoordinates: CGPoint? { get set }
 }

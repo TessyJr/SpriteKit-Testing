@@ -12,18 +12,15 @@ class GameScene: SKScene, ExplorationSceneProtocol {
     var defeatedEnemyCoordinates: [CGPoint] = [CGPoint]()
     
     var player: Player = Player()
-    var labelSpell: SKLabelNode = SKLabelNode()
-    var labelHealth: SKLabelNode = SKLabelNode()
+    var labelPlayerSpell: SKLabelNode = SKLabelNode()
+    var labelPlayerHealth: SKLabelNode = SKLabelNode()
     
+    var spawnCoordinate: CGPoint = CGPoint()
+    //    var nextSceneCoordinate: CGPoint = CGPoint()
     var lastPlayerCoordinates: CGPoint?
     
     override func didMove(to view: SKView) {
         sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
-        
-        player.spriteNode = childNode(withName: "player") as! SKSpriteNode
-        labelSpell = player.spriteNode.childNode(withName: "labelSpell") as! SKLabelNode
-        labelHealth = player.spriteNode.childNode(withName: "labelHealth") as! SKLabelNode
-        labelHealth.text = "\(player.currentHealth)"
         
         for node in self.children {
             if let someTileMap = node as? SKTileMapNode {
@@ -31,14 +28,30 @@ class GameScene: SKScene, ExplorationSceneProtocol {
                     setUpWallsAndFloors(map: someTileMap)
                 } else if someTileMap.name == "enemy" {
                     setUpEnemies(map: someTileMap)
-                } else if someTileMap.name == "spawnpoint" {
-                    setUpPlayerSpawnpoint(map: someTileMap)
+                } else if someTileMap.name == "point" {
+                    setUpPoint(map: someTileMap)
                 }
             }
         }
+        
+        setUpPlayer()
     }
     
-    func setUpPlayerSpawnpoint(map: SKTileMapNode) {
+    func setUpPlayer() {
+        player.spriteNode = childNode(withName: "player") as! SKSpriteNode
+        
+        if lastPlayerCoordinates == nil {
+            player.spriteNode.position = spawnCoordinate
+        } else {
+            player.spriteNode.position = lastPlayerCoordinates!
+        }
+        
+        labelPlayerSpell = player.spriteNode.childNode(withName: "labelPlayerSpell") as! SKLabelNode
+        labelPlayerHealth = player.spriteNode.childNode(withName: "labelPlayerHealth") as! SKLabelNode
+        labelPlayerHealth.text = "\(player.currentHealth)"
+    }
+    
+    func setUpPoint(map: SKTileMapNode) {
         let tileMap = map
         let tileSize = tileMap.tileSize
         let halfWidth = CGFloat(tileMap.numberOfColumns) / 2.0 * tileSize.width
@@ -52,15 +65,9 @@ class GameScene: SKScene, ExplorationSceneProtocol {
                     
                     let tileCoordinate = CGPoint(x: x, y: y)
                     
-                    if lastPlayerCoordinates == nil {
-                        if let isSpawnpoint = tileDefinition.userData?["isSpawnpoint"] as? Bool {
-                            if isSpawnpoint {
-                                player.spriteNode.position = tileCoordinate
-                            }
-                        }
-                    } else {
-                        if let playerCoordinates = lastPlayerCoordinates {
-                            player.spriteNode.position = playerCoordinates
+                    if let isSpawnPoint = tileDefinition.userData?["isSpawnPoint"] as? Bool {
+                        if isSpawnPoint {
+                            spawnCoordinate = tileCoordinate
                         }
                     }
                 }
@@ -119,13 +126,6 @@ class GameScene: SKScene, ExplorationSceneProtocol {
                             floorCoordinates.append(tileCoordinate)
                         }
                     }
-                    
-                    // Check if tile is an enemy
-                    if let isEnemy = tileDefinition.userData?["isEnemy"] as? Bool {
-                        if isEnemy {
-                            enemyCoordinates.append(tileCoordinate)
-                        }
-                    }
                 }
             }
         }
@@ -164,7 +164,7 @@ class GameScene: SKScene, ExplorationSceneProtocol {
             if let scene = GKScene(fileNamed: "BattleScene") {
                 if let sceneNode = scene.rootNode as! BattleScene? {
                     sceneNode.scaleMode = .aspectFit
-                    sceneNode.exploreScene = self
+                    sceneNode.previousScene = self
                     sceneNode.player = self.player
                     sceneNode.enemy = Enemy.create(enemyType: enemyType)!
                     
@@ -180,30 +180,30 @@ class GameScene: SKScene, ExplorationSceneProtocol {
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 123:
-            player.move(direction: .left, wallCoordinates: wallCoordinates, completion: goToBattleScene)
+            player.move(direction: .left, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
             
         case 124:
-            player.move(direction: .right, wallCoordinates: wallCoordinates, completion: goToBattleScene)
+            player.move(direction: .right, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
             
         case 126:
-            player.move(direction: .up, wallCoordinates: wallCoordinates, completion: goToBattleScene)
+            player.move(direction: .up, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
             
         case 125:
-            player.move(direction: .down, wallCoordinates: wallCoordinates, completion: goToBattleScene)
+            player.move(direction: .down, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
             
         case 36:
             player.inputSpell = ""
-            labelSpell.text = player.inputSpell
+            labelPlayerSpell.text = player.inputSpell
             
         default:
             player.inputSpell.append(event.characters!)
-            labelSpell.text = player.inputSpell
+            labelPlayerSpell.text = player.inputSpell
             break
         }
     }
     
     override func update(_ currentTime: TimeInterval) {
         sceneCamera.position = player.spriteNode.position
-        labelHealth.text = "\(player.currentHealth)"
+        labelPlayerHealth.text = "\(player.currentHealth)"
     }
 }

@@ -12,11 +12,13 @@ protocol BattleSceneProtocol {
     var damageFloorNodes: [SKSpriteNode] { get set }
     
     var player: Player { get set }
-    var labelSpell: SKLabelNode { get set }
+    var labelPlayerSpell: SKLabelNode { get set }
     var labelPlayerHealth: SKLabelNode { get set }
     
     var enemy: Enemy { get set }
     var labelEnemyHealth: SKLabelNode { get set }
     
-    var exploreScene: SKScene & ExplorationSceneProtocol { get set }
+    var spawnCoordinate: CGPoint { get set }
+    
+    var previousScene: SKScene & ExplorationSceneProtocol { get set }
 }
