@@ -17,10 +17,6 @@ class ViewController: NSViewController {
         if let scene = GKScene(fileNamed: "StartScene") {
             // Get the SKScene from the loaded GKScene
             if let sceneNode = scene.rootNode as! StartScene? {
-                // Copy gameplay related content over to the scene
-//                sceneNode.entities = scene.entities
-//                sceneNode.graphs = scene.graphs
-                
                 // Set the scale mode to scale to fit the window
                 sceneNode.scaleMode = .aspectFit
                 

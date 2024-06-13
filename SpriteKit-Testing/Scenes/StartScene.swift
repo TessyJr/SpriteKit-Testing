@@ -1,12 +1,19 @@
 import SpriteKit
 import GameplayKit
 
-class StartScene: SKScene, StartSceneProtocol {
+class StartScene: SKScene, ExplorationSceneProtocol {
     var sceneCamera: SKCameraNode = SKCameraNode()
     
     var floorCoordinates: [CGPoint] = [CGPoint]()
     
     var wallCoordinates: [CGPoint] = [CGPoint]()
+    
+    var enemyCount: Int = 1
+    var enemyCoordinates: [CGPoint] = [CGPoint]()
+    var defeatedEnemyCoordinates: [CGPoint] = [CGPoint]()
+    
+    var isSpellBookOpen: Bool = false
+    var spellBookNode: SKSpriteNode = SKSpriteNode()
     
     var player: Player = Player()
     var labelPlayerSpell: SKLabelNode = SKLabelNode()
@@ -14,9 +21,19 @@ class StartScene: SKScene, StartSceneProtocol {
     
     var spawnCoordinate: CGPoint = CGPoint()
     var nextSceneCoordinate: CGPoint = CGPoint()
+    var lastPlayerCoordinates: CGPoint?
+    
+    var doorNode: SKSpriteNode = SKSpriteNode()
+    var doorCoordinate: CGPoint = CGPoint()
+    
+    var npc: NPC? = NPC1()
+    var npcCoordinate: CGPoint = CGPoint()
     
     override func didMove(to view: SKView) {
         sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
+        
+        spellBookNode = SKSpriteNode(imageNamed: "spellBook")
+        spellBookNode.zPosition = 20
         
         for node in self.children {
             if let someTileMap = node as? SKTileMapNode {
@@ -29,11 +46,41 @@ class StartScene: SKScene, StartSceneProtocol {
         }
         
         setUpPlayer()
+        setUpNPC()
+        setUpDoor()
+    }
+    
+    func setUpDoor() {
+        print("setup door")
+        doorNode = childNode(withName: "door") as! SKSpriteNode
+        
+        if enemyCount != 0 {
+            doorCoordinate = doorNode.position
+        } else {
+            doorNode.removeFromParent()
+            doorCoordinate = CGPoint()
+        }
+    }
+    
+    func setUpNPC() {
+//        enemyCount += 1
+        
+        npc!.spriteNode = childNode(withName: "npc") as! SKSpriteNode
+        npc!.animateSprite()
+        npcCoordinate = npc!.spriteNode.position
+        
+        npc!.dialogLabelNode = npc!.spriteNode.childNode(withName: "labelNPCDialog") as! SKLabelNode
     }
     
     func setUpPlayer() {
         player.spriteNode = childNode(withName: "player") as! SKSpriteNode
-        player.spriteNode.position = spawnCoordinate
+        player.animateSprite()
+        
+        if lastPlayerCoordinates == nil {
+            player.spriteNode.position = spawnCoordinate
+        } else {
+            player.spriteNode.position = lastPlayerCoordinates!
+        }
         
         labelPlayerSpell = player.spriteNode.childNode(withName: "labelPlayerSpell") as! SKLabelNode
         labelPlayerHealth = player.spriteNode.childNode(withName: "labelPlayerHealth") as! SKLabelNode
@@ -115,24 +162,45 @@ class StartScene: SKScene, StartSceneProtocol {
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 123:
-            player.move(direction: .left, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToNextScene)
+            player.move(direction: .left, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate, doorCoordinate: doorCoordinate, completion: goToNextScene)
             
         case 124:
-            player.move(direction: .right, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToNextScene)
+            player.move(direction: .right, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate, doorCoordinate: doorCoordinate, completion: goToNextScene)
             
         case 126:
-            player.move(direction: .up, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToNextScene)
+            player.move(direction: .up, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate, doorCoordinate: doorCoordinate, completion: goToNextScene)
             
         case 125:
-            player.move(direction: .down, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToNextScene)
+            player.move(direction: .down, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate, doorCoordinate: doorCoordinate, completion: goToNextScene)
             
         case 36:
             player.inputSpell = ""
             labelPlayerSpell.text = player.inputSpell
             
+//        case 48:
+//            if isSpellBookOpen {
+//                isSpellBookOpen = false
+//                spellBookNode.removeFromParent()
+//            } else {
+//                isSpellBookOpen = true
+//                sceneCamera.addChild(spellBookNode)
+//            }
+            
+        case 49:
+            if player.inputSpell == "" {
+                player.interact(scene: self)
+            } else {
+                player.inputSpell.append(event.characters!)
+                labelPlayerSpell.text = player.inputSpell
+            }
+            
         default:
-            player.inputSpell.append(event.characters!)
-            labelPlayerSpell.text = player.inputSpell
+//            if player.isInteracting {
+//                break
+//            }
+//            
+//            player.inputSpell.append(event.characters!)
+//            labelPlayerSpell.text = player.inputSpell
             break
         }
     }

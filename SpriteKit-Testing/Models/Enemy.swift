@@ -11,7 +11,7 @@ class Enemy {
     
     var attackInterval: CGFloat
     
-    init(name: String = "enemy", currentHealth: Int = 500, maxHealth: Int = 500, attackInterval: CGFloat = 3.0) {
+    init(name: String = "devil", currentHealth: Int = 500, maxHealth: Int = 500, attackInterval: CGFloat = 3.0) {
         self.name = name
         self.currentHealth = currentHealth
         self.maxHealth = maxHealth
@@ -23,12 +23,14 @@ class Enemy {
         switch enemyType.lowercased() {
         case "devil":
             return Devil()
+        case "npc":
+            return TutorialEnemy()
         default:
             return nil
         }
     }
     
-    func startAttacking(scene: BattleScene, player: Player) {}
+    func startAttacking(scene: BattleScene, player: Player, completion: @escaping () -> Void) {}
     
     func animateSprite() {
         spriteNode.removeAllActions()
@@ -48,6 +50,7 @@ class Enemy {
             
             spriteNode.run(repeatIdleAnimation)
         case .hurt:
+            var textures: [SKTexture] = []
             for i in 1...2 {
                 let textureName = "\(name)-hurt-\(i)"
                 let texture = SKTexture(imageNamed: textureName)
@@ -76,7 +79,6 @@ class Enemy {
         currentHealth -= damage
         
         if currentHealth <= 0 {
-            spriteNode.removeAllActions()
             status = .die
             animateSprite()
         } else {
@@ -91,7 +93,6 @@ class Enemy {
     }
 }
 
-// Subclass for Goblin enemy
 class Devil: Enemy {
     init() {
         super.init(name: "devil", currentHealth: 100, maxHealth: 100, attackInterval: 0)
@@ -115,7 +116,7 @@ class Devil: Enemy {
         // Step 2: Pre-attack logic
         let preAttackAction = SKAction.run {
             for coordinate in attackCoordinates {
-                let trapdoorTexture = SKTexture(imageNamed: "trapdoor")
+                let trapdoorTexture = SKTexture(imageNamed: "fireball")
                 let trapdoorNode = SKSpriteNode(texture: trapdoorTexture)
                 trapdoorNode.position = coordinate
                 trapdoorNode.size = CGSize(width: 16, height: 16)
@@ -126,7 +127,7 @@ class Devil: Enemy {
             }
         }
         
-        // Step 3: Wait for 2 seconds
+        // Step 3: Wait for 1 second
         let waitAction1 = SKAction.wait(forDuration: 1.0)
         
         // Step 4: Remove pre-attack nodes
@@ -142,7 +143,7 @@ class Devil: Enemy {
             scene.damageFloorCoordinates = attackCoordinates
             
             for coordinate in attackCoordinates {
-                let trapdoorTexture = SKTexture(imageNamed: "trapdoor")
+                let trapdoorTexture = SKTexture(imageNamed: "fireball")
                 let trapdoorNode = SKSpriteNode(texture: trapdoorTexture)
                 trapdoorNode.position = coordinate
                 trapdoorNode.size = CGSize(width: 16, height: 16)
@@ -177,26 +178,160 @@ class Devil: Enemy {
         
         return sequence
     }
+
+    private func attack2Action(scene: BattleScene, player: Player) -> SKAction {
+            var attackCoordinates = [CGPoint]()
+            
+            // Step 1: Get attack coordinates
+            let getAttackCoordinatesAction = SKAction.run {
+                scene.floorCoordinates.forEach { coordinate in
+                    let randomInt = Int.random(in: 1...2)
+                    if coordinate.x  == 24.0 && randomInt == 1 {
+                        attackCoordinates.append(coordinate)
+                    }
+                }
+            }
+            let getAttackCoordinatesAction2 = SKAction.run {
+                attackCoordinates.indices.forEach { index in
+                       attackCoordinates[index] = CGPoint(x: attackCoordinates[index].x - 16, y: attackCoordinates[index].y)
+                   }
+            }
+            
+            // Step 2: Pre-attack logic
+            let preAttackAction = SKAction.run {
+                for coordinate in attackCoordinates {
+                    let trapdoorTexture = SKTexture(imageNamed: "fireball")
+                    let trapdoorNode = SKSpriteNode(texture: trapdoorTexture)
+                    trapdoorNode.position = coordinate
+                    trapdoorNode.size = CGSize(width: 16, height: 16)
+                    trapdoorNode.alpha = 0.2
+                    
+                    scene.addChild(trapdoorNode)
+                    scene.preDamageFloorNodes.append(trapdoorNode)
+                }
+            }
+            
+            // Step 3: Wait for 2 seconds
+            let waitAction1 = SKAction.wait(forDuration: 1.0)
+            
+            // Step 4: Remove pre-attack nodes
+            let removePreAttackAction = SKAction.run {
+                for preDamageFloorNode in scene.preDamageFloorNodes {
+                    preDamageFloorNode.removeFromParent()
+                }
+                scene.preDamageFloorNodes.removeAll()
+            }
+            
+            // Step 5: Attack logic
+            let attackAction = SKAction.run {
+                scene.damageFloorCoordinates = attackCoordinates
+                
+                for coordinate in attackCoordinates {
+                    let trapdoorTexture = SKTexture(imageNamed: "fireball")
+                    let trapdoorNode = SKSpriteNode(texture: trapdoorTexture)
+                    trapdoorNode.position = coordinate
+                    trapdoorNode.size = CGSize(width: 16, height: 16)
+                    
+                    scene.addChild(trapdoorNode)
+                    
+                    scene.damageFloorNodes.append(trapdoorNode)
+                }
+            }
+            
+            // Step 6: Check if player takes damage
+            let checkIfPlayerTakesDamageAction = SKAction.run {
+                player.checkIfStandingOnDamageTile(damageFloorCoordinates: scene.damageFloorCoordinates)
+            }
+            
+            // Step 7: Wait for 1 second
+            let waitAction2 = SKAction.wait(forDuration: 0.15)
+            
+            // Step 8: Remove attack nodes
+            let removePreviousAttack = SKAction.run {
+                for trapdoorNode in scene.damageFloorNodes {
+                    trapdoorNode.removeFromParent()
+                }
+        
+                scene.damageFloorCoordinates.removeAll()
+                scene.damageFloorNodes.removeAll()
+            }
+            
+            // Step 8: Remove attack nodes
+            let removeAttackAction = SKAction.run {
+                for trapdoorNode in scene.damageFloorNodes {
+                    trapdoorNode.removeFromParent()
+                }
+                
+                attackCoordinates.removeAll()
+                scene.damageFloorCoordinates.removeAll()
+                scene.damageFloorNodes.removeAll()
+            }
+            
+            let actions: [SKAction] = [
+                attackAction,
+                checkIfPlayerTakesDamageAction,
+                waitAction2,
+                removePreviousAttack
+            ]
+
+            // Create an array to hold the sequence
+            var sequenceActions: [SKAction] = []
+
+            // Define the number of times the attack wave should repeat
+            let numberOfWaves = 9
+
+            sequenceActions.append(getAttackCoordinatesAction)
+            sequenceActions.append(preAttackAction)
+            sequenceActions.append(waitAction1)
+            sequenceActions.append(removePreAttackAction)
+            sequenceActions.append(contentsOf: actions)
+            
+            // Add actions for each wave
+            for _ in 0..<numberOfWaves {
+                sequenceActions.append(getAttackCoordinatesAction2)
+                sequenceActions.append(contentsOf: actions)
+            }
+
+            // Add the last wait and remove action
+            sequenceActions.append(waitAction2)
+            sequenceActions.append(removeAttackAction)
+
+            // Create the sequence
+            let sequence = SKAction.sequence(sequenceActions)
+            
+            return sequence
+        }
     
-    override func startAttacking(scene: BattleScene, player: Player) {
+    override func startAttacking(scene: BattleScene, player: Player, completion: @escaping () -> Void) {
         let waitAction = SKAction.wait(forDuration: attackInterval)
         
         // Randomly choose the first attack
-        var chosenAttackAction = SKAction()
-        let randomAttack = Int.random(in: 1...1)
+        var attackAction = SKAction()
+        let randomAttack = Int.random(in: 1...2)
         switch randomAttack {
         case 1:
-            chosenAttackAction = self.attack1Action(scene: scene, player: player)
+            attackAction = self.attack1Action(scene: scene, player: player)
+        case 2:
+            attackAction = self.attack2Action(scene: scene, player: player)
         default:
             return
         }
         
-        let attackSequence = SKAction.sequence([waitAction, chosenAttackAction])
+        let attackCompleteAction = SKAction.run {
+            completion()
+        }
         
-        // Repeat the combined sequence forever
-        let attackSequenceAction = SKAction.repeatForever(attackSequence)
+        let attackSequence = SKAction.sequence([waitAction, attackAction, attackCompleteAction])
         
         // Run the repeating sequence action
-        scene.run(attackSequenceAction)
+        scene.run(attackSequence)
     }
+}
+
+class TutorialEnemy: Enemy {
+    init() {
+        super.init(name: "devil", currentHealth: 30, maxHealth: 30, attackInterval: 0)
+    }
+    
+    override func startAttacking(scene: BattleScene, player: Player, completion: @escaping () -> Void) {}
 }

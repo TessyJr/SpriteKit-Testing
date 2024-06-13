@@ -1,26 +1,36 @@
 import SpriteKit
 import GameplayKit
 
-class GameScene: SKScene, ExplorationSceneProtocol {
+class GameScene: SKScene, ExplorationSceneProtocol {    
     var sceneCamera: SKCameraNode = SKCameraNode()
     
     var floorCoordinates: [CGPoint] = [CGPoint]()
     
     var wallCoordinates: [CGPoint] = [CGPoint]()
     
+    var enemyCount: Int = 0
     var enemyCoordinates: [CGPoint] = [CGPoint]()
     var defeatedEnemyCoordinates: [CGPoint] = [CGPoint]()
+    
+    var npc: NPC?
+    var npcCoordinate: CGPoint = CGPoint()
+    
+    var isSpellBookOpen: Bool = false
+    var spellBookNode: SKSpriteNode = SKSpriteNode()
     
     var player: Player = Player()
     var labelPlayerSpell: SKLabelNode = SKLabelNode()
     var labelPlayerHealth: SKLabelNode = SKLabelNode()
     
     var spawnCoordinate: CGPoint = CGPoint()
-    //    var nextSceneCoordinate: CGPoint = CGPoint()
+    var nextSceneCoordinate: CGPoint = CGPoint()
     var lastPlayerCoordinates: CGPoint?
     
     override func didMove(to view: SKView) {
         sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
+        
+        spellBookNode = SKSpriteNode(imageNamed: "spellBook")
+        spellBookNode.zPosition = 20
         
         for node in self.children {
             if let someTileMap = node as? SKTileMapNode {
@@ -39,6 +49,7 @@ class GameScene: SKScene, ExplorationSceneProtocol {
     
     func setUpPlayer() {
         player.spriteNode = childNode(withName: "player") as! SKSpriteNode
+        player.animateSprite()
         
         if lastPlayerCoordinates == nil {
             player.spriteNode.position = spawnCoordinate
@@ -180,24 +191,41 @@ class GameScene: SKScene, ExplorationSceneProtocol {
     override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case 123:
-            player.move(direction: .left, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
+            player.move(direction: .left, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate, completion: goToBattleScene)
             
         case 124:
-            player.move(direction: .right, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
+            player.move(direction: .right, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate,completion: goToBattleScene)
             
         case 126:
-            player.move(direction: .up, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
+            player.move(direction: .up, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate,completion: goToBattleScene)
             
         case 125:
-            player.move(direction: .down, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, completion: goToBattleScene)
+            player.move(direction: .down, wallCoordinates: wallCoordinates, floorCoordinates: floorCoordinates, npcCoordinate: npcCoordinate,completion: goToBattleScene)
             
         case 36:
             player.inputSpell = ""
             labelPlayerSpell.text = player.inputSpell
             
+//        case 48:
+//            if isSpellBookOpen {
+//                isSpellBookOpen = false
+//                spellBookNode.removeFromParent()
+//            } else {
+//                isSpellBookOpen = true
+//                sceneCamera.addChild(spellBookNode)
+//            }
+            
+        case 49:
+            if player.inputSpell == "" {
+                player.interact(scene: self)
+            } else {
+                player.inputSpell.append(event.characters!)
+                labelPlayerSpell.text = player.inputSpell
+            }
+            
         default:
-            player.inputSpell.append(event.characters!)
-            labelPlayerSpell.text = player.inputSpell
+//            player.inputSpell.append(event.characters!)
+//            labelPlayerSpell.text = player.inputSpell
             break
         }
     }

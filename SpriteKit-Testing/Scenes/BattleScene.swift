@@ -4,6 +4,8 @@ import GameplayKit
 class BattleScene: SKScene, BattleSceneProtocol {
     var sceneCamera: SKCameraNode = SKCameraNode()
     
+    var isBattleOver: Bool = false
+    
     var floorCoordinates: [CGPoint] = [CGPoint]()
     
     var wallCoordinates: [CGPoint] = [CGPoint]()
@@ -11,6 +13,9 @@ class BattleScene: SKScene, BattleSceneProtocol {
     var preDamageFloorNodes = [SKSpriteNode]()
     var damageFloorCoordinates = [CGPoint]()
     var damageFloorNodes = [SKSpriteNode]()
+    
+    var isSpellBookOpen: Bool = false
+    var spellBookNode: SKSpriteNode = SKSpriteNode()
     
     var player: Player = Player()
     var labelPlayerSpell: SKLabelNode = SKLabelNode()
@@ -25,6 +30,9 @@ class BattleScene: SKScene, BattleSceneProtocol {
     
     override func didMove(to view: SKView) {
         sceneCamera = childNode(withName: "sceneCamera") as! SKCameraNode
+        
+        spellBookNode = SKSpriteNode(imageNamed: "spellBook")
+        spellBookNode.zPosition = 20
         
         for node in self.children {
             if let someTileMap = node as? SKTileMapNode {
@@ -41,12 +49,23 @@ class BattleScene: SKScene, BattleSceneProtocol {
         setUpPlayer()
         setUpEnemy()
         
-        enemy.animateSprite()
-        enemy.startAttacking(scene: self, player: self.player)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // Start the enemy attacking loop
+            self.enemyAttackLoop()
+        }
+    }
+    
+    func enemyAttackLoop() {
+        enemy.startAttacking(scene: self, player: self.player) {
+            if !self.isBattleOver {
+                self.enemyAttackLoop()
+            }
+        }
     }
     
     func setUpPlayer() {
         player.spriteNode = childNode(withName: "player") as! SKSpriteNode
+        player.animateSprite()
         player.spriteNode.position = spawnCoordinate
         
         labelPlayerSpell = player.spriteNode.childNode(withName: "labelPlayerSpell") as! SKLabelNode
@@ -59,6 +78,8 @@ class BattleScene: SKScene, BattleSceneProtocol {
     
     func setUpEnemy() {
         enemy.spriteNode = childNode(withName: "enemy") as! SKSpriteNode
+        enemy.animateSprite()
+        
         labelEnemyHealth = enemy.spriteNode.childNode(withName: "labelEnemyHealth") as! SKLabelNode
         labelEnemyHealth.text = "\(enemy.currentHealth)"
     }
@@ -137,9 +158,35 @@ class BattleScene: SKScene, BattleSceneProtocol {
         }
     }
     
-    override func keyDown(with event: NSEvent) {
+    func stopBattle() {
+        self.removeAllActions()
         
-        if player.isStunned {
+        let cleanBattleSceneAction = SKAction.run {
+            self.isBattleOver = true
+            self.damageFloorNodes.forEach { $0.removeFromParent() }
+            self.preDamageFloorNodes.forEach { $0.removeFromParent() }
+            self.damageFloorCoordinates.removeAll()
+        }
+        
+        let waitAction = SKAction.wait(forDuration: 1.0)
+        
+        let changeSceneAction = SKAction.run {
+            self.previousScene.defeatedEnemyCoordinates.append(self.previousScene.lastPlayerCoordinates!)
+            self.previousScene.enemyCount -= 1
+            
+            if let view = self.view {
+                let transition = SKTransition.fade(withDuration: 1.0)
+                view.presentScene(self.previousScene, transition: transition)
+            }
+        }
+        
+        let stopBattleSequence = SKAction.sequence([cleanBattleSceneAction, waitAction, changeSceneAction])
+        
+        self.run(stopBattleSequence)
+    }
+    
+    override func keyDown(with event: NSEvent) {
+        if player.isStun || isBattleOver {
             return
         }
         
@@ -161,24 +208,13 @@ class BattleScene: SKScene, BattleSceneProtocol {
             player.inputSpell = ""
             labelPlayerSpell.text = player.inputSpell
             
-            if enemy.currentHealth <= 0 {
-                self.removeAllActions()
-                damageFloorNodes.forEach { damageFloorNode in
-                    damageFloorNode.removeFromParent()
-                }
-                preDamageFloorNodes.forEach { preDamageFloorNode in
-                    preDamageFloorNode.removeFromParent()
-                }
-                damageFloorCoordinates.removeAll()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.previousScene.defeatedEnemyCoordinates.append(self.previousScene.lastPlayerCoordinates!)
-                    
-                    if let view = self.view {
-                        let transition = SKTransition.fade(withDuration: 1.0)
-                        view.presentScene(self.previousScene, transition: transition)
-                    }
-                }
+        case 48:
+            if isSpellBookOpen {
+                isSpellBookOpen = false
+                spellBookNode.removeFromParent()
+            } else {
+                isSpellBookOpen = true
+                sceneCamera.addChild(spellBookNode)
             }
             
         default:
